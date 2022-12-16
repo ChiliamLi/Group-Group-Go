@@ -88,36 +88,78 @@ define([
                 {
                     'help': 'Add to ' + icon_list[group_num] + ' group',
                     'icon': icon_list[group_num],
-                    'handler': function () { }
+                    'handler': function () { } // placeholder
                 },
                 // action name
                 'planetjupyter' + group_num,
                 // prefix
                 'Planet Jupyter' + group_num)
-        ], id = group_num.toString())
+        ], id = group_num.toString()) // add id to the button group
 
-        //console.log(document.getElementById(group_num.toString()).childNodes[0]);
-
+        // console.log(document.getElementById(group_num.toString()).childNodes[0]);
         // Add OnClick function for the button
-        document.getElementById(group_num.toString()).childNodes[0].onclick = function () {
-            console.log(group_num.toString() + " clicked")
-            mode = icon_list[group_num];
-            console.log('mode' + " " + icon_list[group_num])
+        add_group_button_click_function(group_num);
+    };
 
+    var add_group_button_click_function = function (group_num) {
+        document.getElementById(group_num.toString()).childNodes[0].onclick = function () {
+            mode = icon_list[group_num];
             mode_index = group_to_color_index[mode]
 
-            // Highlight the current group icon
-            for (var i = 0; i < num_groups; i++) {
+            console.log('mode' + " " + icon_list[group_num])
+            console.log(group_num.toString() + " clicked")
 
-                if (i == group_num) {
-                    document.getElementById(i.toString()).childNodes[0].style.color = group_to_color_dict[mode]
-                }
-                else {
-                    document.getElementById(i.toString()).childNodes[0].style.color = "black"
-                }
-            }
+
+            highlight_current_group_icon(group_num);
+
+            highlight_current_group_checkbox();
+
+            update_sequence_num(mode_index);
         };
-    };
+    }
+
+
+    var highlight_current_group_icon = function (group_num) {
+        for (var i = 0; i < num_groups; i++) {
+
+            if (i == group_num) {
+                document.getElementById(i.toString()).childNodes[0].style.color = group_to_color_dict[mode]
+            }
+            else {
+                document.getElementById(i.toString()).childNodes[0].style.color = "black"
+            }
+        }
+    }
+
+    var highlight_current_group_checkbox = function () {
+        current_run_list_cell_ids = list_of_run_lists[mode_index].map(a => a.cell_id)
+        console.log("current_run_list_cell_ids")
+        console.log(current_run_list_cell_ids)
+
+        all_cells = Jupyter.notebook.get_cells()
+        for (var i = 0; i < all_cells.length; i++) {
+            current_cell = all_cells[i]
+
+            innerCellDiv = current_cell.element[0].childNodes[0].childNodes[1]
+            button_container = innerCellDiv.childNodes[0].childNodes[0].childNodes[0]
+
+            console.log(button_container)
+
+            spanSequence = button_container.childNodes[0]
+            console.log(spanSequence);
+            checkboxElement = button_container.childNodes[1]
+            console.log(checkboxElement);
+            if (current_run_list_cell_ids.includes(current_cell.cell_id)) {
+                console.log("Enter");
+                checkboxElement.checked = true;
+                checkboxElement.style = "accent-color: " + group_to_color_dict[mode];
+            }
+            else {
+                checkboxElement.checked = false
+                checkboxElement.style = "accent-color: " + "#EEEEEE"
+            }
+        }
+    }
 
 
     // Add Toolbar buttons
@@ -151,10 +193,6 @@ define([
                 'handler': add_group
             }, 'planetjupyter-plus_cells_to_list', 'Planet Jupyter')
         ])
-
-
-        // Button for Default first group
-        add_group();
     }
 
     var delete_from_run_list = function (mode_index, cell) {
@@ -218,37 +256,27 @@ define([
             var checkbox = $('<input/>').attr('type', 'checkbox');
             var sequence_span = $('<span/>').text('');
 
+            // Add checkbox to click function
             checkbox.click(function () {
                 var value = checkbox.prop('checked');
                 cell.metadata.checked = value;
                 var mode_index = group_to_color_index[mode]
-
 
                 var color = group_to_color_dict[mode]
 
                 // If checked, add the current cell to run list under this mode
                 if (value) {
                     checkbox.css('accent-color', color);
-                    cell.metadata.color = color;
                     list_of_run_lists[mode_index].push(cell);
-
-                    // update the sequence number of the cell
-                    // go through all the cells
-                    // if the cell is in the current group
-                    // update the sequence number
-                    update_sequence_num();
-
                 }
                 // Delete this cell from run list under this mode
                 else {
                     checkbox.css('accent-color', "#EEEEEE");
-                    cell.metadata.color = color;
                     delete_from_run_list(mode_index, cell);
-
-                    // update the sequence number of the cell
-                    update_sequence_num();
-
                 }
+
+                cell.metadata.color = color;
+                update_sequence_num();
                 console.log(cell.metadata.checked);
             })
 
@@ -270,6 +298,9 @@ define([
 
         add_toolbar_buttons();
         register_cellbar_select_mode();
+
+        // Add a default group
+        add_group();
 
         // Default mode to show the checkboxes
         show_checkboxes();

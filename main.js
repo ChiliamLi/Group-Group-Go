@@ -5,10 +5,25 @@ define([
     'base/js/utils',
     'notebook/js/codecell'
 ], function (Jupyter, events, codecell) {
-    var run_list = []; /* list of cells to be run */
+
     select_mode = true;
 
-    num_groups = 1;
+    var list_of_run_lists = []; /* list of cells to be run */
+
+
+    for (var ii = 0; ii < 9; ii++) {
+        empty_list = [];
+        list_of_run_lists.push(empty_list);
+    }
+
+    var list_of_run_sequences = []; /* list of maps of cell_id to sequence */
+
+    for (var ii = 0; ii < 9; ii++) {
+        empty_map = {};
+        list_of_run_sequences.push(empty_map);
+    }
+
+    num_groups = 0;
 
     icon_list = ["fa-bus", "fa-subway", "fa-truck",
         "fa-car", "fa-bicycle", "fa-plane",
@@ -16,56 +31,38 @@ define([
 
     mode = "fa-bus"; // initial mode
 
-    change_group_mode_list = []
-
     group_to_color_dict = {
         "fa-bus": "green",
         "fa-subway": "blue",
-        "fa-truck": "red",
-        "fa-car": "brown",
+        "fa-truck": "pink",
+        "fa-car": "cyan",
         "fa-bicycle": "yellow",
         "fa-plane": "orange",
         "fa-motorcycle": "purple",
-        "fa-ship": "pink",
-        "fa-rocket": "cyan"
+        "fa-ship": "red",
+        "fa-rocket": "brown"
     }
 
-    var run_all = function _execute_without_selecting() {
-        // notebook.execute_cells alters selection, this doesn't
-        var cells = Jupyter.notebook.get_cells();
-        idx_start = 0;
-        idx_end = cells.length;
-        for (var ii = idx_start; ii < idx_end; ii++) {
-            cells[ii].execute(false);
-        }
+    group_to_color_index = {
+        "fa-bus": "0",
+        "fa-subway": "1",
+        "fa-truck": "2",
+        "fa-car": "3",
+        "fa-bicycle": "4",
+        "fa-plane": "5",
+        "fa-motorcycle": "6",
+        "fa-ship": "7",
+        "fa-rocket": "8"
     }
 
+    var run_current_group = function __execute_with_selection3() {
+        console.log("RUN CURRENT GROUP in mode " + mode);
+        var mode_index = group_to_color_index[mode]
+        // Get cells to run in the current group
+        var cells = list_of_run_lists[mode_index];
 
-    var add_to_list = function __execute_with_selection() {
-        run_list.push(Jupyter.notebook.get_selected_index());
-        console.log('added');
-    }
-    // var run_list_fun = function __execute_with_selection2() {
-    //   var cells = Jupyter.notebook.get_cells();
-    //   for (var ii = 0; ii < run_list.length; ii++) {
-    //     cells[run_list[ii]].execute(false);
-    //   }
-    // }
-
-
-    //incorporating checkboxes
-    var run_list_fun = function __execute_with_selection2() {
-        var cells = Jupyter.notebook.get_cells();
         for (var ii = 0; ii < cells.length; ii++) {
-            //logic if the cell is checked yet
-            console.log("GOT HERE");
-            console.log(cells[ii].metadata.checked);
-            // console.log(cells[ii].metadata.trusted);
-            if (cells[ii].metadata.checked) {
-                console.log("Check is true");
-                console.log("Cell Number: " + ii);
-                cells[ii].execute(false);
-            }
+            cells[ii].execute(false);
         }
     }
 
@@ -84,6 +81,7 @@ define([
         num_groups = num_groups + 1;
         const group_num = num_groups - 1;
 
+        // Add Button for the group
         Jupyter.toolbar.add_buttons_group([
             Jupyter.keyboard_manager.actions.register(
                 // action  
@@ -100,13 +98,17 @@ define([
 
         //console.log(document.getElementById(group_num.toString()).childNodes[0]);
 
-        // Add onclick function for each group
+        // Add OnClick function for the button
         document.getElementById(group_num.toString()).childNodes[0].onclick = function () {
             console.log(group_num.toString() + " clicked")
             mode = icon_list[group_num];
             console.log('mode' + " " + icon_list[group_num])
 
+            mode_index = group_to_color_index[mode]
+
+            // Highlight the current group icon
             for (var i = 0; i < num_groups; i++) {
+
                 if (i == group_num) {
                     document.getElementById(i.toString()).childNodes[0].style.color = group_to_color_dict[mode]
                 }
@@ -127,17 +129,8 @@ define([
             Jupyter.keyboard_manager.actions.register({
                 'help': 'Run all cells',
                 'icon': 'fa-play-circle',
-                'handler': run_all
+                'handler': run_current_group
             }, 'planetjupyter-run_all', 'Planet Jupyter')
-        ])
-
-        // Button for run selected
-        Jupyter.toolbar.add_buttons_group([
-            Jupyter.keyboard_manager.actions.register({
-                'help': 'Run selected cells',
-                'icon': 'fa-step-forward',
-                'handler': run_list_fun
-            }, 'planetjupyter-run_list_fun', 'Planet Jupyter')
         ])
 
         // Button for show checkboxes
@@ -161,33 +154,57 @@ define([
 
 
         // Button for Default first group
-        group_num = num_groups - 1;
-        Jupyter.toolbar.add_buttons_group([
-            Jupyter.keyboard_manager.actions.register({
-                'help': 'Add to ' + icon_list[group_num] + ' group',
-                'icon': icon_list[group_num],
-                'handler': function () { } // place holder
-            }, 'go to group0', 'Planet Jupyter')
-        ], id = (group_num).toString())
-
-        // Add onclick function to first default group
-        document.getElementById(group_num.toString()).childNodes[0].onclick = function () {
-            console.log(group_num.toString() + " clicked")
-            mode = icon_list[group_num];
-            console.log('mode' + " " + icon_list[group_num])
-
-            for (var i = 0; i < num_groups; i++) {
-                if (i == group_num) {
-                    document.getElementById(i.toString()).childNodes[0].style.color = group_to_color_dict[mode]
-                }
-                else {
-                    document.getElementById(i.toString()).childNodes[0].style.color = "black"
-                }
-            }
-        };
+        add_group();
     }
 
-    // Add Checkbox to each cell
+    var delete_from_run_list = function (mode_index, cell) {
+
+        cell_id = cell.cell_id;
+        console.log(cell_id);
+        index = 0;
+
+        for (var ii = 0; ii < list_of_run_lists[mode_index].length; ii++) {
+            if (list_of_run_lists[mode_index][ii].cell_id == cell_id) {
+                index = ii;
+                break;
+            }
+        }
+
+        if (index > -1) { // only splice array when item is found
+            list_of_run_lists[mode_index].splice(index, 1); // 2nd parameter means remove one item only
+        }
+    }
+
+    var update_sequence_num = function () {
+
+        current_run_list_cell_ids = list_of_run_lists[mode_index].map(a => a.cell_id)
+        console.log("current_run_list_cell_ids")
+        console.log(current_run_list_cell_ids)
+
+        all_cells = Jupyter.notebook.get_cells()
+        for (var i = 0; i < all_cells.length; i++) {
+            current_cell = all_cells[i]
+
+            innerCellDiv = current_cell.element[0].childNodes[0].childNodes[1]
+            button_container = innerCellDiv.childNodes[0].childNodes[0].childNodes[0]
+
+            console.log(button_container)
+
+            spanSequence = button_container.childNodes[0]
+            console.log(spanSequence);
+            checkboxElement = button_container.childNodes[1]
+            console.log(checkboxElement);
+            if (current_run_list_cell_ids.includes(current_cell.cell_id)) {
+                console.log("Enter");
+                spanSequence.textContent = current_run_list_cell_ids.indexOf(current_cell.cell_id) + 1
+            }
+            else {
+                spanSequence.textContent = ""
+            }
+        }
+    }
+
+    // Add checkbox and sequence to each cell
     var register_cellbar_select_mode = function () {
         console.log("add select mode presets");
 
@@ -196,24 +213,46 @@ define([
 
         var addcheckBox = function (div, cell) {
             var button_container = $(div)
+            console.log(button_container)
+
             var checkbox = $('<input/>').attr('type', 'checkbox');
+            var sequence_span = $('<span/>').text('');
 
             checkbox.click(function () {
                 var value = checkbox.prop('checked');
                 cell.metadata.checked = value;
+                var mode_index = group_to_color_index[mode]
 
-                // Change color when click??
-                var checkboxDiv = $(checkbox).parent();
 
                 var color = group_to_color_dict[mode]
+
+                // If checked, add the current cell to run list under this mode
                 if (value) {
-                    checkboxDiv.css('background-color', color);
-                } else {
-                    checkboxDiv.css('background-color', "#EEEEEE");
+                    checkbox.css('accent-color', color);
+                    cell.metadata.color = color;
+                    list_of_run_lists[mode_index].push(cell);
+
+                    // update the sequence number of the cell
+                    // go through all the cells
+                    // if the cell is in the current group
+                    // update the sequence number
+                    update_sequence_num();
+
+                }
+                // Delete this cell from run list under this mode
+                else {
+                    checkbox.css('accent-color', "#EEEEEE");
+                    cell.metadata.color = color;
+                    delete_from_run_list(mode_index, cell);
+
+                    // update the sequence number of the cell
+                    update_sequence_num();
+
                 }
                 console.log(cell.metadata.checked);
             })
 
+            button_container.append(sequence_span);
             button_container.append(checkbox);
         }
 
@@ -233,12 +272,16 @@ define([
         register_cellbar_select_mode();
 
         // Default mode to show the checkboxes
-        // TODO: reformat the checkboxes
         show_checkboxes();
     }
     return {
         load_ipython_extension: load_ipython_extension
     };
+
+    // TODO:
+    // 1. Integrate 521 Codes
+    // 2. improve design
+    // 3. refactor code
 
 
 });

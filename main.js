@@ -8,13 +8,15 @@ define([
 
     select_mode = true;
 
+    background_opacity = 30 // 30% opacity
+
+    num_groups = 0; // total number of groups
+
     var list_of_run_lists = []; /* list of cells to be run */
     for (var ii = 0; ii < 9; ii++) {
         empty_list = [];
         list_of_run_lists.push(empty_list);
     }
-
-    num_groups = 0; // total number of groups
 
     icon_list = ["fa-bus", "fa-subway", "fa-truck",
         "fa-car", "fa-bicycle", "fa-plane",
@@ -23,15 +25,27 @@ define([
     mode = "fa-bus"; // initial mode
 
     group_to_color_dict = {
-        "fa-bus": "green",
-        "fa-subway": "blue",
-        "fa-truck": "pink",
-        "fa-car": "cyan",
-        "fa-bicycle": "yellow",
-        "fa-plane": "orange",
-        "fa-motorcycle": "purple",
-        "fa-ship": "red",
-        "fa-rocket": "brown"
+        "fa-bus": "#e3342f", // red
+        "fa-subway": "#f6993f", // orange
+        "fa-truck": "#ffed4a", // yellow
+        "fa-car": "#38c172", // green
+        "fa-bicycle": "#4dc0b5", // teal
+        "fa-plane": "#3490dc", // blue
+        "fa-motorcycle": "#6574cd", // indigo
+        "fa-ship": "#9561e2", // purple
+        "fa-rocket": "#f66d9b" // pink
+    }
+
+    group_to_color_dict = {
+        "fa-bus": "#e3342f", // red
+        "fa-subway": "#f6993f", // orange
+        "fa-truck": "#ffed4a", // yellow
+        "fa-car": "#38c172", // green
+        "fa-bicycle": "#4dc0b5", // teal
+        "fa-plane": "#3490dc", // blue
+        "fa-motorcycle": "#6574cd", // indigo
+        "fa-ship": "#9561e2", // purple
+        "fa-rocket": "#f66d9b" // pink
     }
 
     group_to_mode_index = {
@@ -77,27 +91,29 @@ define([
 
 
     var add_group = function () {
-        num_groups = num_groups + 1;
-        const group_num = num_groups - 1;
+        if (num_groups < 9) {
+            num_groups = num_groups + 1;
+            const group_num = num_groups - 1;
 
-        // Add Button for the group
-        Jupyter.toolbar.add_buttons_group([
-            Jupyter.keyboard_manager.actions.register(
-                // action  
-                {
-                    'help': 'Group' + (group_num + 1).toString(),
-                    'icon': icon_list[group_num],
-                    'handler': function () { } // placeholder
-                },
-                // action name
-                'go-to-group' + group_num,
-                // prefix
-                'Group Group Go')
-        ], id = group_num.toString()) // add id to the button group
+            // Add Button for the group
+            Jupyter.toolbar.add_buttons_group([
+                Jupyter.keyboard_manager.actions.register(
+                    // action  
+                    {
+                        'help': 'Group' + (group_num + 1).toString(),
+                        'icon': icon_list[group_num],
+                        'handler': function () { } // placeholder
+                    },
+                    // action name
+                    'go-to-group' + group_num,
+                    // prefix
+                    'Group Group Go')
+            ], id = group_num.toString()) // add id to the button group
 
-        // console.log(document.getElementById(group_num.toString()).childNodes[0]);
-        // Add OnClick function for the button
-        add_group_button_click_function(group_num);
+            // console.log(document.getElementById(group_num.toString()).childNodes[0]);
+            // Add OnClick function for the button
+            add_group_button_click_function(group_num);
+        }
     };
 
     var add_group_button_click_function = function (group_num) {
@@ -158,14 +174,14 @@ define([
             // If the cell is in the current group
             if (current_run_list_cell_ids.includes(current_cell.cell_id)) {
                 // highlight the whole cell
-                cellDiv.style = "background-color: " + group_to_color_dict[mode] + ";"
+                cellDiv.style = "background-color: " + group_to_color_dict[mode] + background_opacity + ";"
 
                 // highlight the checkbox
                 checkboxElement.checked = true;
                 checkboxElement.style = "accent-color: " + group_to_color_dict[mode];
             }
             else {
-                cellDiv.style = "background-color: " + "white" + ";"
+                cellDiv.style = "background-color: " + "#FFFFFF" + ";"
                 checkboxElement.checked = false
                 checkboxElement.style = "accent-color: " + "#EEEEEE"
             }
@@ -260,7 +276,7 @@ define([
             for (var i = 0; i < all_cells.length; i++) {
                 current_cell = all_cells[i]
                 cellDiv = current_cell.element[0]
-                cellDiv.style = "background-color: " + "white" + ";"
+                cellDiv.style = "background-color: " + "#FFFFFF" + ";" //white
             }
 
         }
@@ -279,6 +295,7 @@ define([
             var button_container = $(div)
 
             var checkbox = $('<input/>').attr('type', 'checkbox');
+
             var sequence_span = $('<span/>').text('');
 
             // Add checkbox to click function
@@ -297,8 +314,10 @@ define([
 
                 // If checked, add the current cell to run list under this mode
                 if (value) {
-                    // Highlight the whole cell
-                    cellDiv.css({ "background-color": color });
+                    // Highlight the whole cell with opacity
+                    //console.log(cellDiv[0])
+                    background_color = color + background_opacity
+                    cellDiv[0].style = "background-color: " + background_color + ";"
 
                     // Highlight the checkbox
                     checkbox.css('accent-color', color);
@@ -308,7 +327,7 @@ define([
                 }
                 // Delete this cell from run list under this mode
                 else {
-                    cellDiv.css({ "background-color": "white" });
+                    cellDiv.css({ "background-color": "#FFFFFF " }); // White
                     checkbox.css('accent-color', "#EEEEEE");
                     delete_from_run_list(mode_index, cell);
                 }

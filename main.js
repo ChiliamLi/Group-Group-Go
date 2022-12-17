@@ -186,6 +186,7 @@ define([
 
             // Default innerCell Div
             innerCellDiv = current_cell.element[0].childNodes[0].childNodes[1]
+
             // if it is markdown cell(they have different html structure)
             if (current_cell.cell_type != "code") {
                 innerCellDiv = current_cell.element[0].childNodes[1]
@@ -247,7 +248,23 @@ define([
         if (select_mode) {
             Jupyter.CellToolbar.activate_preset('Show Select Mode');
         } else {
+            // Reset
             Jupyter.CellToolbar.activate_preset('Raw Cell Format');
+            list_of_run_lists = []
+            for (var ii = 0; ii < 9; ii++) {
+                empty_list = [];
+                list_of_run_lists.push(empty_list);
+            }
+            mode = "fa-bus";
+
+            // remove all cell highlights
+            all_cells = Jupyter.notebook.get_cells()
+            for (var i = 0; i < all_cells.length; i++) {
+                current_cell = all_cells[i]
+                cellDiv = current_cell.element[0]
+                cellDiv.style = "background-color: " + "white" + ";"
+            }
+
         }
         select_mode = !select_mode;
     };
@@ -262,8 +279,6 @@ define([
 
         var addcheckBox = function (div, cell) {
             var button_container = $(div)
-            var cellDiv = button_container.parent().parent()
-            console.log(cellDiv)
 
             var checkbox = $('<input/>').attr('type', 'checkbox');
             var sequence_span = $('<span/>').text('');
@@ -276,15 +291,26 @@ define([
 
                 var color = group_to_color_dict[mode]
 
+                console.log(cell.cell_type)
+                cellDiv = button_container.parent().parent().parent().parent().parent()
+                if (cell.cell_type != "code") {
+                    cellDiv = button_container.parent().parent().parent().parent()
+                }
+
                 // If checked, add the current cell to run list under this mode
                 if (value) {
+                    // Highlight the whole cell
+                    cellDiv.css({ "background-color": color });
 
-                    cellDiv.css("background-color ", color);
+                    // Highlight the checkbox
                     checkbox.css('accent-color', color);
+
+                    // Add the cell to run list under this mode
                     list_of_run_lists[mode_index].push(cell);
                 }
                 // Delete this cell from run list under this mode
                 else {
+                    cellDiv.css({ "background-color": "white" });
                     checkbox.css('accent-color', "#EEEEEE");
                     delete_from_run_list(mode_index, cell);
                 }
@@ -313,7 +339,7 @@ define([
         add_toolbar_buttons();
         register_cellbar_select_mode();
 
-        // Add a default group
+        // Add a default group and highlight the button
         add_group();
         highlight_current_group_icon(0)
 

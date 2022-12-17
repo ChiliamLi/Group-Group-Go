@@ -293,10 +293,22 @@ define([
 
         var addcheckBox = function (div, cell) {
             var button_container = $(div)
+            button_container.attr("style",
+                "display: flex;"
+            )
 
             var checkbox = $('<input/>').attr('type', 'checkbox');
+            // checkbox design
+            checkbox.attr("style",
+                "width: 20px; height:20px; padding: auto; margin: auto;"
+            )
 
             var sequence_span = $('<span/>').text('');
+            // sequence design
+            sequence_span.attr("style",
+                "font-size: 16px; display: flex; justify-content: center; padding-right: 5px; padding-top: 3px"
+            )
+
 
             // Add checkbox to click function
             checkbox.click(function () {
@@ -369,7 +381,6 @@ define([
 
     // TODO:
     // 1. Integrate 521 Codes
-    // 2. improve design
 
 
 });

@@ -16,13 +16,6 @@ define([
         list_of_run_lists.push(empty_list);
     }
 
-    var list_of_run_sequences = []; /* list of maps of cell_id to sequence */
-
-    for (var ii = 0; ii < 9; ii++) {
-        empty_map = {};
-        list_of_run_sequences.push(empty_map);
-    }
-
     num_groups = 0;
 
     icon_list = ["fa-bus", "fa-subway", "fa-truck",
@@ -66,15 +59,23 @@ define([
         }
     }
 
-    var show_checkboxes = function () {
-        console.log(select_mode)
-        if (select_mode) {
-            Jupyter.CellToolbar.activate_preset('Show Select Mode');
-        } else {
-            Jupyter.CellToolbar.activate_preset('Raw Cell Format');
+    var delete_from_run_list = function (mode_index, cell) {
+
+        cell_id = cell.cell_id;
+        console.log(cell_id);
+        index = 0;
+
+        for (var ii = 0; ii < list_of_run_lists[mode_index].length; ii++) {
+            if (list_of_run_lists[mode_index][ii].cell_id == cell_id) {
+                index = ii;
+                break;
+            }
         }
-        select_mode = !select_mode;
-    };
+
+        if (index > -1) { // only splice array when item is found
+            list_of_run_lists[mode_index].splice(index, 1); // 2nd parameter means remove one item only
+        }
+    }
 
 
     var add_group = function () {
@@ -138,25 +139,70 @@ define([
 
         all_cells = Jupyter.notebook.get_cells()
         for (var i = 0; i < all_cells.length; i++) {
+
             current_cell = all_cells[i]
 
-            innerCellDiv = current_cell.element[0].childNodes[0].childNodes[1]
+            cellDiv = current_cell.element[0]
+            // console.log(cellDiv)
+            // Default innerCell Div
+            innerCellDiv = cellDiv.childNodes[0].childNodes[1]
+            // if it is markdown cell(they have different html structure)
+            if (current_cell.cell_type != "code") {
+                innerCellDiv = current_cell.element[0].childNodes[1]
+            }
+            // console.log(innerCellDiv)
+
             button_container = innerCellDiv.childNodes[0].childNodes[0].childNodes[0]
+            // console.log(button_container)
 
-            console.log(button_container)
-
-            spanSequence = button_container.childNodes[0]
-            console.log(spanSequence);
             checkboxElement = button_container.childNodes[1]
-            console.log(checkboxElement);
+            // console.log(checkboxElement);
+
+            // If the cell is in the current group
             if (current_run_list_cell_ids.includes(current_cell.cell_id)) {
-                console.log("Enter");
+                // highlight the whole cell
+                cellDiv.style = "background-color: " + group_to_color_dict[mode] + ";"
                 checkboxElement.checked = true;
                 checkboxElement.style = "accent-color: " + group_to_color_dict[mode];
             }
             else {
+                cellDiv.style = "background-color: " + "white" + ";"
                 checkboxElement.checked = false
                 checkboxElement.style = "accent-color: " + "#EEEEEE"
+            }
+        }
+    }
+
+    var update_sequence_num = function () {
+
+        mode_index = group_to_color_index[mode]
+        current_run_list_cell_ids = list_of_run_lists[mode_index].map(a => a.cell_id)
+        console.log("current_run_list_cell_ids")
+        console.log(current_run_list_cell_ids)
+
+        all_cells = Jupyter.notebook.get_cells()
+        for (var i = 0; i < all_cells.length; i++) {
+            current_cell = all_cells[i]
+
+            // Default innerCell Div
+            innerCellDiv = current_cell.element[0].childNodes[0].childNodes[1]
+            // if it is markdown cell(they have different html structure)
+            if (current_cell.cell_type != "code") {
+                innerCellDiv = current_cell.element[0].childNodes[1]
+            }
+            button_container = innerCellDiv.childNodes[0].childNodes[0].childNodes[0]
+
+            // console.log(button_container)
+
+            spanSequence = button_container.childNodes[0]
+            // console.log(spanSequence);
+            checkboxElement = button_container.childNodes[1]
+            // console.log(checkboxElement);
+            if (current_run_list_cell_ids.includes(current_cell.cell_id)) {
+                spanSequence.textContent = current_run_list_cell_ids.indexOf(current_cell.cell_id) + 1
+            }
+            else {
+                spanSequence.textContent = ""
             }
         }
     }
@@ -195,52 +241,17 @@ define([
         ])
     }
 
-    var delete_from_run_list = function (mode_index, cell) {
 
-        cell_id = cell.cell_id;
-        console.log(cell_id);
-        index = 0;
-
-        for (var ii = 0; ii < list_of_run_lists[mode_index].length; ii++) {
-            if (list_of_run_lists[mode_index][ii].cell_id == cell_id) {
-                index = ii;
-                break;
-            }
+    var show_checkboxes = function () {
+        console.log(select_mode)
+        if (select_mode) {
+            Jupyter.CellToolbar.activate_preset('Show Select Mode');
+        } else {
+            Jupyter.CellToolbar.activate_preset('Raw Cell Format');
         }
+        select_mode = !select_mode;
+    };
 
-        if (index > -1) { // only splice array when item is found
-            list_of_run_lists[mode_index].splice(index, 1); // 2nd parameter means remove one item only
-        }
-    }
-
-    var update_sequence_num = function () {
-
-        current_run_list_cell_ids = list_of_run_lists[mode_index].map(a => a.cell_id)
-        console.log("current_run_list_cell_ids")
-        console.log(current_run_list_cell_ids)
-
-        all_cells = Jupyter.notebook.get_cells()
-        for (var i = 0; i < all_cells.length; i++) {
-            current_cell = all_cells[i]
-
-            innerCellDiv = current_cell.element[0].childNodes[0].childNodes[1]
-            button_container = innerCellDiv.childNodes[0].childNodes[0].childNodes[0]
-
-            console.log(button_container)
-
-            spanSequence = button_container.childNodes[0]
-            console.log(spanSequence);
-            checkboxElement = button_container.childNodes[1]
-            console.log(checkboxElement);
-            if (current_run_list_cell_ids.includes(current_cell.cell_id)) {
-                console.log("Enter");
-                spanSequence.textContent = current_run_list_cell_ids.indexOf(current_cell.cell_id) + 1
-            }
-            else {
-                spanSequence.textContent = ""
-            }
-        }
-    }
 
     // Add checkbox and sequence to each cell
     var register_cellbar_select_mode = function () {
@@ -251,7 +262,8 @@ define([
 
         var addcheckBox = function (div, cell) {
             var button_container = $(div)
-            console.log(button_container)
+            var cellDiv = button_container.parent().parent()
+            console.log(cellDiv)
 
             var checkbox = $('<input/>').attr('type', 'checkbox');
             var sequence_span = $('<span/>').text('');
@@ -266,6 +278,8 @@ define([
 
                 // If checked, add the current cell to run list under this mode
                 if (value) {
+
+                    cellDiv.css("background-color ", color);
                     checkbox.css('accent-color', color);
                     list_of_run_lists[mode_index].push(cell);
                 }
@@ -276,7 +290,7 @@ define([
                 }
 
                 cell.metadata.color = color;
-                update_sequence_num();
+                update_sequence_num(mode_index);
                 console.log(cell.metadata.checked);
             })
 
@@ -301,6 +315,7 @@ define([
 
         // Add a default group
         add_group();
+        highlight_current_group_icon(0)
 
         // Default mode to show the checkboxes
         show_checkboxes();

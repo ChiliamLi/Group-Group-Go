@@ -9,14 +9,12 @@ define([
     select_mode = true;
 
     var list_of_run_lists = []; /* list of cells to be run */
-
-
     for (var ii = 0; ii < 9; ii++) {
         empty_list = [];
         list_of_run_lists.push(empty_list);
     }
 
-    num_groups = 0;
+    num_groups = 0; // total number of groups
 
     icon_list = ["fa-bus", "fa-subway", "fa-truck",
         "fa-car", "fa-bicycle", "fa-plane",
@@ -36,7 +34,7 @@ define([
         "fa-rocket": "brown"
     }
 
-    group_to_color_index = {
+    group_to_mode_index = {
         "fa-bus": "0",
         "fa-subway": "1",
         "fa-truck": "2",
@@ -50,7 +48,7 @@ define([
 
     var run_current_group = function __execute_with_selection3() {
         console.log("RUN CURRENT GROUP in mode " + mode);
-        var mode_index = group_to_color_index[mode]
+        var mode_index = group_to_mode_index[mode]
         // Get cells to run in the current group
         var cells = list_of_run_lists[mode_index];
 
@@ -105,7 +103,7 @@ define([
     var add_group_button_click_function = function (group_num) {
         document.getElementById(group_num.toString()).childNodes[0].onclick = function () {
             mode = icon_list[group_num];
-            mode_index = group_to_color_index[mode]
+            mode_index = group_to_mode_index[mode]
 
             console.log('mode' + " " + icon_list[group_num])
             console.log(group_num.toString() + " clicked")
@@ -122,7 +120,6 @@ define([
 
     var highlight_current_group_icon = function (group_num) {
         for (var i = 0; i < num_groups; i++) {
-
             if (i == group_num) {
                 document.getElementById(i.toString()).childNodes[0].style.color = group_to_color_dict[mode]
             }
@@ -162,6 +159,8 @@ define([
             if (current_run_list_cell_ids.includes(current_cell.cell_id)) {
                 // highlight the whole cell
                 cellDiv.style = "background-color: " + group_to_color_dict[mode] + ";"
+
+                // highlight the checkbox
                 checkboxElement.checked = true;
                 checkboxElement.style = "accent-color: " + group_to_color_dict[mode];
             }
@@ -175,7 +174,7 @@ define([
 
     var update_sequence_num = function () {
 
-        mode_index = group_to_color_index[mode]
+        mode_index = group_to_mode_index[mode]
         current_run_list_cell_ids = list_of_run_lists[mode_index].map(a => a.cell_id)
         console.log("current_run_list_cell_ids")
         console.log(current_run_list_cell_ids)
@@ -286,7 +285,7 @@ define([
             checkbox.click(function () {
                 var value = checkbox.prop('checked');
                 cell.metadata.checked = value;
-                var mode_index = group_to_color_index[mode]
+                var mode_index = group_to_mode_index[mode]
 
                 var color = group_to_color_dict[mode]
 
@@ -352,7 +351,6 @@ define([
     // TODO:
     // 1. Integrate 521 Codes
     // 2. improve design
-    // 3. refactor code
 
 
 });

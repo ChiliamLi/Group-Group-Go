@@ -87,14 +87,14 @@ define([
             Jupyter.keyboard_manager.actions.register(
                 // action  
                 {
-                    'help': 'Add to ' + icon_list[group_num] + ' group',
+                    'help': 'Group' + (group_num + 1).toString(),
                     'icon': icon_list[group_num],
                     'handler': function () { } // placeholder
                 },
                 // action name
-                'planetjupyter' + group_num,
+                'go-to-group' + group_num,
                 // prefix
-                'Planet Jupyter' + group_num)
+                'Group Group Go')
         ], id = group_num.toString()) // add id to the button group
 
         // console.log(document.getElementById(group_num.toString()).childNodes[0]);
@@ -211,16 +211,6 @@ define([
 
     // Add Toolbar buttons
     var add_toolbar_buttons = function () {
-        console.log();
-
-        // Button for play all
-        Jupyter.toolbar.add_buttons_group([
-            Jupyter.keyboard_manager.actions.register({
-                'help': 'Run all cells',
-                'icon': 'fa-play-circle',
-                'handler': run_current_group
-            }, 'planetjupyter-run_all', 'Planet Jupyter')
-        ])
 
         // Button for show checkboxes
         Jupyter.toolbar.add_buttons_group([
@@ -229,16 +219,25 @@ define([
                 'icon': 'fa-check-square-o',
                 'handler': show_checkboxes
             },
-                'show-select-mode', 'Planet Jupyter')
+                'show-select-mode', 'Group Group Go')
+        ])
+
+        // Button for run current group
+        Jupyter.toolbar.add_buttons_group([
+            Jupyter.keyboard_manager.actions.register({
+                'help': 'Run Cells in Group',
+                'icon': 'fa-play-circle',
+                'handler': run_current_group
+            }, 'run-cell-in-group', 'Group Group Go')
         ])
 
         // Button for add a new group
         Jupyter.toolbar.add_buttons_group([
             Jupyter.keyboard_manager.actions.register({
-                'help': 'Add planet jupyter cell',
+                'help': 'Add New Group',
                 'icon': 'fa-plus',
                 'handler': add_group
-            }, 'planetjupyter-plus_cells_to_list', 'Planet Jupyter')
+            }, 'add-new-group', 'Group Group Go')
         ])
     }
 

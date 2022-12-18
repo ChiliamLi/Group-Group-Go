@@ -8,7 +8,7 @@ define([
 
     select_mode = true;
 
-    background_opacity = 30 // 30% opacity
+    background_opacity = 30 // 30% opacity for cell highlight background
 
     num_groups = 0; // total number of groups
 
@@ -178,12 +178,12 @@ define([
 
                 // highlight the checkbox
                 checkboxElement.checked = true;
-                checkboxElement.style = "accent-color: " + group_to_color_dict[mode];
+                checkboxElement.style = "accent-color: " + group_to_color_dict[mode] + "; width: 20px; height:20px; padding: auto; margin: auto;"
             }
             else {
                 cellDiv.style = "background-color: " + "#FFFFFF" + ";"
                 checkboxElement.checked = false
-                checkboxElement.style = "accent-color: " + "#EEEEEE"
+                checkboxElement.style = "accent-color: " + "#EEEEEE" + "; width: 20px; height:20px; padding: auto; margin: auto;"
             }
         }
     }
@@ -333,6 +333,10 @@ define([
 
                     // Highlight the checkbox
                     checkbox.css('accent-color', color);
+                    // enlarge the checkbox
+                    checkbox.attr("style",
+                        "width: 20px; height:20px; padding: auto; margin: auto; accent-color:" + color + ";"
+                    )
 
                     // Add the cell to run list under this mode
                     list_of_run_lists[mode_index].push(cell);
@@ -378,9 +382,4 @@ define([
     return {
         load_ipython_extension: load_ipython_extension
     };
-
-    // TODO:
-    // 1. Integrate 521 Codes
-
-
 });

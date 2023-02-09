@@ -59,9 +59,21 @@ define([
         "fa-ship": "7",
         "fa-rocket": "8"
     }
+    mode_to_group_index = {
+        "0": "fa-bus",
+        "1": "fa-subway",
+        "2": "fa-truck",
+        "3": "fa-car",
+        "4": "fa-bicycle",
+        "5": "fa-plane",
+        "6": "fa-motorcycle",
+        "7": "fa-ship",
+        "8": "fa-rocket"
+    }
 
     var run_current_group = function __execute_with_selection3() {
         console.log("RUN CURRENT GROUP in mode " + mode);
+        document.getElementById('run-button'.toString()).childNodes[0].blur()
         var mode_index = group_to_mode_index[mode]
         // Get cells to run in the current group
         var cells = list_of_run_lists[mode_index];
@@ -91,6 +103,7 @@ define([
 
 
     var add_group = function () {
+        document.getElementById('add-button'.toString()).childNodes[0].blur()
         if (num_groups < 9) {
             num_groups = num_groups + 1;
             const group_num = num_groups - 1;
@@ -102,14 +115,14 @@ define([
                     {
                         'help': 'Group' + (group_num + 1).toString(),
                         'icon': icon_list[group_num],
-                        'handler': function () { } // placeholder
+                        'handler': function () { } // placeholder,
                     },
                     // action name
                     'go-to-group' + group_num,
                     // prefix
                     'Group Group Go')
             ], id = group_num.toString()) // add id to the button group
-
+            document.getElementById(group_num.toString()).childNodes[0].style.color = group_to_color_dict[mode_to_group_index[group_num]]
             // console.log(document.getElementById(group_num.toString()).childNodes[0]);
             // Add OnClick function for the button
             add_group_button_click_function(group_num);
@@ -137,18 +150,24 @@ define([
     var highlight_current_group_icon = function (group_num) {
         for (var i = 0; i < num_groups; i++) {
             if (i == group_num) {
+                console.log(group_num)
+                var dom = document.getElementById(i.toString()).childNodes[0]
+                document.getElementById(i.toString()).childNodes[0].style.boxShadow = "inset 0px 10px 20px #c1c1c1";;
+                document.getElementById(i.toString()).childNodes[0].blur()
                 document.getElementById(i.toString()).childNodes[0].style.color = group_to_color_dict[mode]
+                // document.getElementById(i.toString()).childNodes[0].addClass('active').blur()
             }
             else {
-                document.getElementById(i.toString()).childNodes[0].style.color = "black"
+                // document.getElementById(i.toString()).childNodes[0].style.color = group_to_color_dict[mode_to_group_index[i]]
+                document.getElementById(i.toString()).childNodes[0].style.boxShadow = "none";
             }
         }
     }
 
     var highlight_current_group_checkbox = function () {
         current_run_list_cell_ids = list_of_run_lists[mode_index].map(a => a.cell_id)
-        console.log("current_run_list_cell_ids")
-        console.log(current_run_list_cell_ids)
+        // console.log("current_run_list_cell_ids")
+        // console.log(current_run_list_cell_ids)
 
         all_cells = Jupyter.notebook.get_cells()
         for (var i = 0; i < all_cells.length; i++) {
@@ -223,7 +242,6 @@ define([
         }
     }
 
-
     // Add Toolbar buttons
     var add_toolbar_buttons = function () {
 
@@ -235,7 +253,7 @@ define([
                 'handler': show_checkboxes
             },
                 'show-select-mode', 'Group Group Go')
-        ])
+        ], id = 'show_checkboxes'.toString())
 
         // Button for run current group
         Jupyter.toolbar.add_buttons_group([
@@ -244,21 +262,22 @@ define([
                 'icon': 'fa-play-circle',
                 'handler': run_current_group
             }, 'run-cell-in-group', 'Group Group Go')
-        ])
+        ], id = 'run-button'.toString())
 
         // Button for add a new group
         Jupyter.toolbar.add_buttons_group([
             Jupyter.keyboard_manager.actions.register({
                 'help': 'Add New Group',
-                'icon': 'fa-plus',
+                'icon': 'fa-plus-circle',
                 'handler': add_group
             }, 'add-new-group', 'Group Group Go')
-        ])
+        ], id = 'add-button'.toString())
     }
 
 
     var show_checkboxes = function () {
         console.log(select_mode)
+        document.getElementById('show_checkboxes'.toString()).childNodes[0].blur()
         if (select_mode) {
             Jupyter.CellToolbar.activate_preset('Show Select Mode');
         } else {
@@ -365,9 +384,9 @@ define([
     // Loading the extension
     function load_ipython_extension() {
         // Add a default cell if there are no cells
-        if (Jupyter.notebook.get_cells().length === 1) {
-            insert_cell();
-        }
+        // if (Jupyter.notebook.get_cells().length === 1) {
+        //     insert_cell();
+        // }
 
         add_toolbar_buttons();
         register_cellbar_select_mode();
@@ -383,3 +402,4 @@ define([
         load_ipython_extension: load_ipython_extension
     };
 });
+

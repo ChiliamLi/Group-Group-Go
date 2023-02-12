@@ -3,7 +3,9 @@ define([
     'base/js/events',
     'services/config',
     'base/js/utils',
-    'notebook/js/codecell'
+    'notebook/js/codecell',
+    'jquery',
+    'require'
 ], function (Jupyter, events, codecell) {
 
     select_mode = true;
@@ -73,7 +75,7 @@ define([
 
     var run_current_group = function __execute_with_selection3() {
         console.log("RUN CURRENT GROUP in mode " + mode);
-        document.getElementById('run-button'.toString()).childNodes[0].blur()
+        // document.getElementById('run-button'.toString()).childNodes[0].blur()
         var mode_index = group_to_mode_index[mode]
         // Get cells to run in the current group
         var cells = list_of_run_lists[mode_index];
@@ -103,7 +105,7 @@ define([
 
 
     var add_group = function () {
-        document.getElementById('add-button'.toString()).childNodes[0].blur()
+        // document.getElementById('add-button'.toString()).childNodes[0].blur()
         if (num_groups < 9) {
             num_groups = num_groups + 1;
             const group_num = num_groups - 1;
@@ -245,39 +247,37 @@ define([
     // Add Toolbar buttons
     var add_toolbar_buttons = function () {
 
-        // Button for show checkboxes
+        // Button Group for show checkboxes, run current group, and add a group
         Jupyter.toolbar.add_buttons_group([
+            // Button for show checkboxes
             Jupyter.keyboard_manager.actions.register({
                 'help': 'Show Select Mode',
                 'icon': 'fa-check-square-o',
                 'handler': show_checkboxes
             },
-                'show-select-mode', 'Group Group Go')
-        ], id = 'show_checkboxes'.toString())
+                'show-select-mode', 'Group Group Go'),
 
-        // Button for run current group
-        Jupyter.toolbar.add_buttons_group([
+            // Button for run current group
             Jupyter.keyboard_manager.actions.register({
                 'help': 'Run Cells in Group',
                 'icon': 'fa-play-circle',
                 'handler': run_current_group
-            }, 'run-cell-in-group', 'Group Group Go')
-        ], id = 'run-button'.toString())
+            }, 'run-cell-in-group', 'Group Group Go'),
 
-        // Button for add a new group
-        Jupyter.toolbar.add_buttons_group([
+
+            // Button for add a new group
             Jupyter.keyboard_manager.actions.register({
                 'help': 'Add New Group',
                 'icon': 'fa-plus-circle',
                 'handler': add_group
             }, 'add-new-group', 'Group Group Go')
-        ], id = 'add-button'.toString())
+        ], id = 'group_group_go'.toString())
     }
 
 
     var show_checkboxes = function () {
         console.log(select_mode)
-        document.getElementById('show_checkboxes'.toString()).childNodes[0].blur()
+        // document.getElementById('show_checkboxes'.toString()).childNodes[0].blur()
         if (select_mode) {
             Jupyter.CellToolbar.activate_preset('Show Select Mode');
         } else {
@@ -319,7 +319,7 @@ define([
             var checkbox = $('<input/>').attr('type', 'checkbox');
             // checkbox design
             checkbox.attr("style",
-                "width: 20px; height:20px; padding: auto; margin: auto;"
+                "width: 20px; height:20px; padding: auto; margin: auto; border:none; outline:none;"
             )
 
             var sequence_span = $('<span/>').text('');
@@ -354,7 +354,8 @@ define([
                     checkbox.css('accent-color', color);
                     // enlarge the checkbox
                     checkbox.attr("style",
-                        "width: 20px; height:20px; padding: auto; margin: auto; accent-color:" + color + ";"
+                        "width: 20px; height:20px; outline:none; border:none" +
+                        "padding: auto; margin: auto; accent-color:" + color + ";"
                     )
 
                     // Add the cell to run list under this mode
@@ -380,13 +381,24 @@ define([
     }
 
 
+    /**
+ * Add CSS file
+ *
+ * @param name filename
+ */
+    var load_css = function (name) {
+        var link = document.createElement("link");
+        link.type = "text/css";
+        link.rel = "stylesheet";
+        link.href = requirejs.toUrl(name);
+        console.log(link.href)
+        document.getElementsByTagName("head")[0].appendChild(link);
+    };
+
 
     // Loading the extension
     function load_ipython_extension() {
-        // Add a default cell if there are no cells
-        // if (Jupyter.notebook.get_cells().length === 1) {
-        //     insert_cell();
-        // }
+        load_css('./nbextensions/group_group_go/main.css');
 
         add_toolbar_buttons();
         register_cellbar_select_mode();

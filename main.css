@@ -1,3 +1,7 @@
 #group_group_go button {
   outline: none;
 }
+
+#group_group_go button {
+  background-color: white;
+}

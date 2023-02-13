@@ -8,6 +8,10 @@ define([
     'require'
 ], function (Jupyter, events, codecell) {
 
+    var params = {
+
+    }
+
     select_mode = true;
 
     background_opacity = 30 // 30% opacity for cell highlight background
@@ -276,8 +280,10 @@ define([
 
 
     var show_checkboxes = function () {
-        console.log(select_mode)
+        select_mode = !select_mode;
+
         // document.getElementById('show_checkboxes'.toString()).childNodes[0].blur()
+
         if (select_mode) {
             Jupyter.CellToolbar.activate_preset('Show Select Mode');
         } else {
@@ -299,7 +305,6 @@ define([
             }
 
         }
-        select_mode = !select_mode;
     };
 
 
@@ -382,23 +387,24 @@ define([
 
 
     /**
- * Add CSS file
- *
- * @param name filename
- */
+    * Add CSS file
+    * @param name filename
+    */
     var load_css = function (name) {
         var link = document.createElement("link");
         link.type = "text/css";
         link.rel = "stylesheet";
         link.href = requirejs.toUrl(name);
-        console.log(link.href)
         document.getElementsByTagName("head")[0].appendChild(link);
     };
 
 
-    // Loading the extension
-    function load_ipython_extension() {
-        load_css('./nbextensions/group_group_go/main.css');
+    var initialize = function () {
+        $.extend(true, params, Jupyter.notebook.config.data.group_group_go);
+
+        if (Jupyter.notebook.get_cells().length === 1) {
+            Jupyter.CellToolbar.activate_preset('Show Select Mode');
+        }
 
         add_toolbar_buttons();
         register_cellbar_select_mode();
@@ -408,7 +414,19 @@ define([
         highlight_current_group_icon(0)
 
         // Default mode to show the checkboxes
-        show_checkboxes();
+        console.log(select_mode)
+        Jupyter.CellToolbar.global_show();
+        Jupyter.CellToolbar.activate_preset('Show Select Mode');
+    };
+
+
+
+
+    // Loading the extension
+    function load_ipython_extension() {
+        load_css('./nbextensions/group_group_go/main.css');
+
+        Jupyter.notebook.config.loaded.then(initialize);
     }
     return {
         load_ipython_extension: load_ipython_extension

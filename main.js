@@ -128,7 +128,7 @@ define([
                 Jupyter.keyboard_manager.actions.register(
                     // action  
                     {
-                        'help': 'Group' + (group_num + 1).toString() + ", Double Click to Deselect All",
+                        'help': 'Group' + (group_num + 1).toString(),
                         'icon': 'fa-circle',
                         'handler': function () { } // placeholder,
                     },
@@ -138,10 +138,10 @@ define([
                     'Group Group Go')
             ], id = group_num.toString()) // add id to the button group
 
+            buttonDiv = document.getElementById(group_num.toString())
+            button = buttonDiv.childNodes[0];
+            button.setAttribute("id", "group-button" + group_num.toString());
 
-            button = document.getElementById(group_num.toString()).childNodes[0];
-            button.style.color = group_to_color_dict[mode_to_group_index[group_num]]
-            // console.log(document.getElementById(group_num.toString()).childNodes[0]);
             // Add OnClick function for the button
             add_group_button_click_function(button, group_num);
         }
@@ -167,7 +167,7 @@ define([
     }
 
     var add_group_button_click_function = function (button, group_num) {
-        // button = document.getElementById(group_num.toString()).childNodes[0];
+        button.style.color = group_to_color_dict[mode_to_group_index[group_num]]
 
         button.onclick = function () {
             mode = icon_list[group_num];
@@ -175,7 +175,6 @@ define([
 
             console.log('mode' + " " + icon_list[group_num])
             console.log(group_num.toString() + " clicked")
-
 
             highlight_current_group_icon(group_num);
 

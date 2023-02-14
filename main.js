@@ -8,12 +8,13 @@ define([
     'require'
 ], function (Jupyter, events, codecell) {
 
-    var params = {
+    params = {
         show_checkboxes: 'Alt-e',
         add_group: 'Alt-a',
         run_current_group: 'Alt-r',
         name_group: 'Alt-n',
         add_current_cell_to_group: 'Alt-s',
+        clear_selections: 'Alt-c',
         run_group_1: 'Alt-1',
         run_group_2: 'Alt-2',
         run_group_3: 'Alt-3',
@@ -22,16 +23,16 @@ define([
         run_group_6: 'Alt-6',
         run_group_7: 'Alt-7',
         run_group_8: 'Alt-8',
-        run_group_9: 'Alt-9'
+        run_group_9: 'Alt-9',
     }
 
-    select_mode = true;
+    show_extension = true;
 
     background_opacity = 30 // 30% opacity for cell highlight background
 
     num_groups = 0; // total number of groups
 
-    var list_of_run_lists = []; /* list of cells to be run */
+    list_of_run_lists = []; /* list of cells to be run */
     for (var ii = 0; ii < 9; ii++) {
         empty_list = [];
         list_of_run_lists.push(empty_list);
@@ -54,7 +55,6 @@ define([
         "fa-ship": "#9561e2", // purple
         "fa-rocket": "#f66d9b" // pink
     }
-
     group_to_mode_index = {
         "fa-bus": "0",
         "fa-subway": "1",
@@ -77,6 +77,15 @@ define([
         "7": "fa-ship",
         "8": "fa-rocket"
     }
+
+    // Add CSS file @param name filename
+    var load_css = function (name) {
+        var link = document.createElement("link");
+        link.type = "text/css";
+        link.rel = "stylesheet";
+        link.href = requirejs.toUrl(name);
+        document.getElementsByTagName("head")[0].appendChild(link);
+    };
 
     var run_current_group = function __execute_with_selection3() {
         console.log("RUN CURRENT GROUP in mode " + mode);
@@ -108,7 +117,6 @@ define([
         }
     }
 
-
     var add_group = function () {
         // document.getElementById('add-button'.toString()).childNodes[0].blur()
         if (num_groups < 9) {
@@ -139,14 +147,23 @@ define([
         }
     };
 
-    var clickGroup = function (group_num) {
-        buttonDiv = button = document.getElementById((group_num - 1).toString())
+    // used for switch group shortcut (Alt + 1, 2, 3, ...)
+    var click_group = function (group_num) {
+        buttonDiv = document.getElementById((group_num - 1).toString())
 
         if (buttonDiv != null) {
             button = $(buttonDiv).find('button')[0]
             console.log(button)
             button.click()
         }
+    }
+
+    var clear_all_selections_in_group = function () {
+        mode_index = group_to_mode_index[mode]
+        list_of_run_lists[mode_index] = []
+        highlight_current_group_checkbox();
+        update_sequence_num(mode_index);
+        change_group_button_name("");
     }
 
     var add_group_button_click_function = function (button, group_num) {
@@ -167,18 +184,7 @@ define([
             update_sequence_num(mode_index);
         };
 
-        // Double click to deselect all cells
-        button.ondblclick = function () {
-            mode = icon_list[group_num];
-            mode_index = group_to_mode_index[mode]
-            list_of_run_lists[mode_index] = []
-            highlight_current_group_checkbox();
-            update_sequence_num(mode_index);
-        }
-
-
     }
-
 
     var highlight_current_group_icon = function (group_num) {
         for (var i = 0; i < num_groups; i++) {
@@ -244,8 +250,8 @@ define([
 
         mode_index = group_to_mode_index[mode]
         current_run_list_cell_ids = list_of_run_lists[mode_index].map(a => a.cell_id)
-        console.log("current_run_list_cell_ids")
-        console.log(current_run_list_cell_ids)
+        // console.log("current_run_list_cell_ids")
+        // console.log(current_run_list_cell_ids)
 
         all_cells = Jupyter.notebook.get_cells()
         for (var i = 0; i < all_cells.length; i++) {
@@ -278,23 +284,15 @@ define([
     // Add Toolbar buttons
     var add_toolbar_buttons = function () {
 
-        // Button Group for show checkboxes, run current group, and add a group
+        // Button Group for enable extension, run/add/name/deselect group,
         Jupyter.toolbar.add_buttons_group([
-            // Button for show checkboxes
+            // Button for enable extension
             Jupyter.keyboard_manager.actions.register({
-                'help': 'Show Checkboxes (Option + E)',
+                'help': 'Enable and show extension (Option + E)',
                 'icon': 'fa-check-circle',
                 'handler': show_checkboxes
             },
-                'show-select-mode', 'Group Group Go'),
-
-            // Button for run current group
-            Jupyter.keyboard_manager.actions.register({
-                'help': 'Run Cells in Group (Option + R)',
-                'icon': 'fa-play-circle',
-                'handler': run_current_group
-            }, 'run-cell-in-group', 'Group Group Go'),
-
+                'show-check-boxes', 'Group Group Go'),
 
             // Button for add a new group
             Jupyter.keyboard_manager.actions.register({
@@ -308,92 +306,106 @@ define([
                 'help': 'Name current Group (Option + N)',
                 'icon': 'fa-arrow-circle-o-right',
                 'handler': name_group
-            }, 'name-a-group', 'Group Group Go')
+            }, 'name-a-group', 'Group Group Go'),
+
+            // Button for clear selections
+            Jupyter.keyboard_manager.actions.register({
+                'help': 'Clear All Selections (Option + C)',
+                'icon': 'fa-ban',
+                'handler': clear_all_selections_in_group
+            }, 'clear-all-selections', 'Group Group Go'),
+
+            // Button for run current group
+            Jupyter.keyboard_manager.actions.register({
+                'help': 'Run Cells in Group (Option + R)',
+                'icon': 'fa-play-circle',
+                'handler': run_current_group
+            }, 'run-cell-in-group', 'Group Group Go')
 
         ], id = 'group_group_go'.toString())
 
 
         // Add Instructions
-        var group_group_go_tool_bar = document.getElementById('group_group_go'.toString())
-        group_group_go_tool_bar.childNodes[0].appendChild(document.createTextNode("  " + "On".toString()))
-        group_group_go_tool_bar.childNodes[1].appendChild(document.createTextNode("  " + "Run Group".toString()))
-        group_group_go_tool_bar.childNodes[2].appendChild(document.createTextNode("  " + "Add".toString()))
-        group_group_go_tool_bar.childNodes[3].appendChild(document.createTextNode("  " + "Name".toString()))
+        var group_group_go_tool_bar = document.getElementById('group_group_go')
+        buttons = $(group_group_go_tool_bar).find('button')
+
+        buttons[0].appendChild(document.createTextNode("  " + "On".toString()))
+        buttons[1].appendChild(document.createTextNode("  " + "Add".toString()))
+        buttons[2].appendChild(document.createTextNode("  " + "Name".toString()))
+        buttons[3].appendChild(document.createTextNode("  " + "Clear".toString()))
+        buttons[4].appendChild(document.createTextNode("  " + "Run Group".toString()))
+    }
+
+    function change_group_button_name(name) {
+        group_button = document.getElementById(group_to_mode_index[mode].toString()).childNodes[0]
+
+        if (group_button.childNodes.length > 1) {
+            group_button.childNodes[1].textContent = " " + name;
+        }
+        else {
+            group_button.appendChild(document.createTextNode(" " + name));
+        }
     }
 
     var name_group = function () {
-        var group_group_go_tool_bar = document.getElementById('group_group_go'.toString())
-        button = group_group_go_tool_bar.childNodes[3]
-        group_button = document.getElementById(group_to_mode_index[mode].toString()).childNodes[0]
-
         let name = prompt("Give a name to this group:", "");
-        if (name != null) {
-            if (group_button.childNodes.length > 1) {
-                group_button.childNodes[1].textContent = " " + name
-            }
-            else {
-                group_button.appendChild(document.createTextNode(" " + name));
-            }
-
+        if (name != null && name != "") {
+            change_group_button_name(name)
         }
-
     }
 
 
-    var show_checkboxes = function () {
+    function remove_all_cell_highlight() {
+        all_cells = Jupyter.notebook.get_cells();
+        for (var i = 0; i < all_cells.length; i++) {
+            current_cell = all_cells[i];
+            cellDiv = current_cell.element[0];
+            cellDiv.style = "background-color: " + "#FFFFFF" + ";";
+        }
+    }
 
-        if (select_mode) {
+    var show_checkboxes = function () {
+        showButton = document.getElementById('group_group_go'.toString()).childNodes[0]
+        groupButton = document.getElementById(group_to_mode_index[mode].toString()).childNodes[0]
+
+        if (show_extension) {
             Jupyter.CellToolbar.activate_preset('Show Select Mode');
             Jupyter.CellToolbar.global_show();
 
-            // make the show button marked
-            document.getElementById('group_group_go'.toString()).childNodes[0].style.boxShadow = "inset 0px 10px 20px #c1c1c1";
-            document.getElementById('group_group_go'.toString()).childNodes[0].childNodes[1].textContent = " On"
+            // mark the show button
+            showButton.style.boxShadow = "inset 0px 10px 20px #c1c1c1";
+            showButton.childNodes[0].className = "fa fa-check-circle"; // icon
+            showButton.childNodes[1].textContent = " On"
 
             // mark the group button
-            groupButton = document.getElementById(group_to_mode_index[mode].toString()).childNodes[0]
             groupButton.style.boxShadow = "inset 0px 10px 20px #c1c1c1";
-            // highlight cells
-            groupButton.click()
 
+            // highlight cells - by default group 1
+            groupButton.click()
 
         } else {
             // Reset
             Jupyter.CellToolbar.activate_preset('Raw Cell Format');
-            // list_of_run_lists = []
-            // for (var ii = 0; ii < 9; ii++) {
-            //     empty_list = [];
-            //     list_of_run_lists.push(empty_list);
-            // }
             mode = "fa-bus";
 
             // remove all cell highlights
-            all_cells = Jupyter.notebook.get_cells()
-            for (var i = 0; i < all_cells.length; i++) {
-                current_cell = all_cells[i]
-                cellDiv = current_cell.element[0]
-                cellDiv.style = "background-color: " + "#FFFFFF" + ";" //white
-            }
-
-            // remove all names
-            // for (var i = 0; i < num_groups; i++) {
-            //     var dom = document.getElementById(i.toString()).childNodes[0]
-            //     if (dom.childNodes.length > 1) {
-            //         dom.removeChild(dom.childNodes[1])
-            //     }
-            // }
+            remove_all_cell_highlight();
 
             // unmark the show button
-            document.getElementById('group_group_go'.toString()).childNodes[0].style = "background-color: white;box-shadow: none;";
-            document.getElementById('group_group_go'.toString()).childNodes[0].childNodes[1].textContent = " Off"
+            showButton = document.getElementById('group_group_go'.toString()).childNodes[0]
+            showButton.style = "background-color: white;box-shadow: none;";
+            console.log(showButton.childNodes[0])
+            showButton.childNodes[0].className = "fa fa-check-circle-o"; // icon
+            showButton.childNodes[1].textContent = " Off" // text
 
             // unmark the group button
-            document.getElementById(group_to_mode_index[mode].toString()).childNodes[0].style = "color:" + group_to_color_dict[mode] + ";background-color: white;box-shadow: none;";
+            groupButton.style = "color:" + group_to_color_dict[mode] + ";background-color: white;box-shadow: none;";
         }
 
-        select_mode = !select_mode;
+        show_extension = !show_extension;
     };
 
+    // Select and move to the next cell if unchecked, otherwise select, used for shortcut
     var select_current_cell = function () {
         // get the current cell
         var cellDiv = $(Jupyter.notebook.get_selected_cell().element[0])
@@ -405,118 +417,104 @@ define([
             checkbox = ob
         });
 
-        checkbox.click()
+        // if the current cell is checked, uncheck it
+        if (checkbox.checked) {
+            checkbox.click()
+        }
+        // otherwise, check it and move to the next cell
+        else {
+            checkbox.click()
+            Jupyter.notebook.select_next();
+        }
     }
 
+    // Implement the click function for each checkbox
+    function click_current_cell(checkbox, cell, button_container) {
+        return function () {
+            value = checkbox.prop('checked');
+            cell.metadata.checked = value;
+            mode_index = group_to_mode_index[mode];
+            color = group_to_color_dict[mode];
 
-    // Add checkbox and sequence to each cell
-    var register_cellbar_select_mode = function () {
-        // console.log("add select mode presets");
+            // code cell and text cell have different div structure
+            cellDiv = button_container.parent().parent().parent().parent().parent();
+            if (cell.cell_type != "code") {
+                cellDiv = button_container.parent().parent().parent().parent();
+            }
 
-        var CellToolbar = Jupyter.CellToolbar
-        Jupyter.CellToolbar.register_preset('Show Select Mode', ['select_mode'])
+            // If checked, add the current cell to run list under this mode
+            if (value) {
+                // Highlight the whole cell with opacity
+                background_color = color + background_opacity;
+                cellDiv[0].style = "background-color: " + background_color + ";"; // .css doesn't support opacity
 
-        var addcheckBox = function (div, cell) {
-            var button_container = $(div)
+                // checkbox style
+                checkbox.css('accent-color', color);
+                checkbox.attr("style",
+                    "width: 20px; height:20px; outline:none; border:none" +
+                    "padding: auto; margin: auto; accent-color:" + color + ";"
+                );
+
+                // Add the cell to run list under this mode
+                list_of_run_lists[mode_index].push(cell);
+            }
+
+            // Delete this cell from run list under this mode
+            else {
+                // remove style
+                cellDiv.css({ "background-color": "#FFFFFF " }); // White
+                checkbox.css('accent-color', "#EEEEEE");
+                delete_from_run_list(mode_index, cell);
+            }
+
+            cell.metadata.color = color;
+            update_sequence_num(mode_index);
+            console.log(cell.metadata.checked);
+        };
+    }
+
+    // Wrapper
+    function add_checkbox_click(checkbox, cell, button_container) {
+        var checkCurrentCell = click_current_cell(checkbox, cell, button_container);
+        // Add checkbox on click function
+        checkbox.click(checkCurrentCell);
+    }
+
+    // Add HTML element to each cell
+    var add_checkbox_to_cell = function () {
+        return function (div, cell) {
+            var button_container = $(div);
             button_container.attr("style",
                 "display: flex;"
-            )
+            );
 
             var checkbox = $('<input/>').attr('type', 'checkbox');
             // checkbox design
             checkbox.attr("style",
                 "width: 20px; height:20px; padding: auto; margin: auto; border:none; outline:none;"
-            )
+            );
 
             var sequence_span = $('<span/>').text('');
             // sequence design
             sequence_span.attr("style",
                 "font-size: 16px; display: flex; justify-content: center; padding-right: 5px; padding-top: 3px"
-            )
+            );
 
-            var checkCurrentCell = function () {
-                var value = checkbox.prop('checked');
-                cell.metadata.checked = value;
-                var mode_index = group_to_mode_index[mode]
-
-                var color = group_to_color_dict[mode]
-
-                console.log(cell.cell_type)
-                cellDiv = button_container.parent().parent().parent().parent().parent()
-                if (cell.cell_type != "code") {
-                    cellDiv = button_container.parent().parent().parent().parent()
-                }
-
-                // If checked, add the current cell to run list under this mode
-                if (value) {
-                    // Highlight the whole cell with opacity
-                    //console.log(cellDiv[0])
-                    background_color = color + background_opacity
-                    cellDiv[0].style = "background-color: " + background_color + ";"
-
-                    // Highlight the checkbox
-                    checkbox.css('accent-color', color);
-                    // enlarge the checkbox
-                    checkbox.attr("style",
-                        "width: 20px; height:20px; outline:none; border:none" +
-                        "padding: auto; margin: auto; accent-color:" + color + ";"
-                    )
-
-                    // Add the cell to run list under this mode
-                    list_of_run_lists[mode_index].push(cell);
-                }
-                // Delete this cell from run list under this mode
-                else {
-                    cellDiv.css({ "background-color": "#FFFFFF " }); // White
-                    checkbox.css('accent-color', "#EEEEEE");
-                    delete_from_run_list(mode_index, cell);
-                }
-
-                cell.metadata.color = color;
-                update_sequence_num(mode_index);
-                console.log(cell.metadata.checked);
-            }
-
-
+            add_checkbox_click(checkbox, cell, button_container);
             button_container.append(sequence_span);
             button_container.append(checkbox);
+        };
+    }
 
-            // Add checkbox to click function
-            checkbox.click(checkCurrentCell);
-        }
-
-
-        CellToolbar.register_callback('select_mode', addcheckBox);
+    // Register the toolbar button
+    var register_cellbar_select_mode = function () {
+        Jupyter.CellToolbar.register_preset('Show Select Mode', ['select_mode'])
+        var addCheckbox = add_checkbox_to_cell()
+        Jupyter.CellToolbar.register_callback('select_mode', addCheckbox);
     }
 
 
-    /**
-    * Add CSS file
-    * @param name filename
-    */
-    var load_css = function (name) {
-        var link = document.createElement("link");
-        link.type = "text/css";
-        link.rel = "stylesheet";
-        link.href = requirejs.toUrl(name);
-        document.getElementsByTagName("head")[0].appendChild(link);
-    };
-
-
-    var initialize = function () {
-        $.extend(true, params, Jupyter.notebook.config.data.group_group_go);
-
-        add_toolbar_buttons();
-        register_cellbar_select_mode();
-
-        // Add a default group and highlight the button
-        add_group();
-        highlight_current_group_icon(0)
-
-        // Default mode to show the checkboxes
-        show_checkboxes();
-
-        /* Add keyboard shortcuts */
+    function add_shortcuts() {
         var add_command_shortcuts = {};
         add_command_shortcuts[params["show_checkboxes"]] = {
             help: 'Show Checkboxes',
@@ -563,11 +561,20 @@ define([
             }
         };
 
+        add_command_shortcuts[params["clear_selections"]] = {
+            help: 'Clear All Selections in Current Group',
+            help_index: 'xc',
+            handler: function () {
+                clear_all_selections_in_group();
+                return false;
+            }
+        };
+
         add_command_shortcuts[params["run_group_1"]] = {
             help: 'Run Group 1',
             help_index: 'x1',
             handler: function () {
-                clickGroup(1);
+                click_group(1);
                 return false;
             }
         };
@@ -576,7 +583,7 @@ define([
             help: 'Run Group 2',
             help_index: 'x2',
             handler: function () {
-                clickGroup(2);
+                click_group(2);
                 return false;
             }
         };
@@ -585,7 +592,7 @@ define([
             help: 'Run Group 3',
             help_index: 'x3',
             handler: function () {
-                clickGroup(3);
+                click_group(3);
                 return false;
             }
         };
@@ -594,7 +601,7 @@ define([
             help: 'Run Group 4',
             help_index: 'x4',
             handler: function () {
-                clickGroup(4);
+                click_group(4);
                 return false;
             }
         };
@@ -604,7 +611,7 @@ define([
 
             help_index: 'x5',
             handler: function () {
-                clickGroup(5);
+                click_group(5);
                 return false;
             }
         };
@@ -613,8 +620,7 @@ define([
             help: 'Run Group 6',
             help_index: 'x6',
             handler: function () {
-                clickGroup(6);
-
+                click_group(6);
                 return false;
             }
         };
@@ -623,7 +629,7 @@ define([
             help: 'Run Group 7',
             help_index: 'x7',
             handler: function () {
-                clickGroup(7);
+                click_group(7);
                 return false;
             }
         };
@@ -632,7 +638,7 @@ define([
             help: 'Run Group 8',
             help_index: 'x8',
             handler: function () {
-                clickGroup(8);
+                click_group(8);
                 return false;
             }
         };
@@ -642,21 +648,37 @@ define([
             help_index: 'x9',
             handler: function () {
 
-                clickGroup(9);
+                click_group(9);
                 return false;
             }
         };
 
-
         Jupyter.keyboard_manager.command_shortcuts.add_shortcuts(add_command_shortcuts);
         Jupyter.keyboard_manager.edit_shortcuts.add_shortcuts(add_command_shortcuts);
-    };
+    }
+
+    function initialize() {
+        $.extend(true, params, Jupyter.notebook.config.data.group_group_go);
+
+        register_cellbar_select_mode();
+
+        add_toolbar_buttons();
+
+        // Add a default group and highlight the button
+        add_group();
+        highlight_current_group_icon(0);
+
+        // Default mode to show the checkboxes
+        show_checkboxes();
+
+        // Add keyboard shortcuts
+        add_shortcuts();
+    }
 
 
     // Loading the extension
     function load_ipython_extension() {
         load_css('./nbextensions/group_group_go/main.css');
-
         Jupyter.notebook.config.loaded.then(initialize);
     }
     return {

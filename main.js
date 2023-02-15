@@ -303,7 +303,7 @@ define([
             // Button for name a new group
             Jupyter.keyboard_manager.actions.register({
                 'help': 'Name current Group (Option + N)',
-                'icon': 'fa-arrow-circle-o-right',
+                'icon': 'fa-pencil',
                 'handler': name_group
             }, 'name-a-group', 'Group Group Go'),
 

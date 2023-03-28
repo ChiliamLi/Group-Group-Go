@@ -216,32 +216,33 @@ define([
             // console.log(cellDiv)
             // Default innerCell Div
             innerCellDiv = cellDiv.childNodes[0].childNodes[1]
+
             // if it is markdown cell(they have different html structure)
-            if (current_cell.cell_type != "code") {
-                innerCellDiv = current_cell.element[0].childNodes[1]
+            // if (current_cell.cell_type == "code") {
+            //     innerCellDiv = current_cell.element[0].childNodes[1]
+            // }
+
+            if (current_cell.cell_type == "code") {
+                button_container = innerCellDiv.childNodes[0].childNodes[0].childNodes[0]
+
+                checkboxElement = button_container.childNodes[1]
+
+                // If the cell is in the current group
+                if (current_run_list_cell_ids.includes(current_cell.cell_id)) {
+                    // highlight the whole cell
+                    cellDiv.style = "background-color: " + group_to_color_dict[mode] + background_opacity + ";"
+
+                    // highlight the checkbox
+                    checkboxElement.checked = true;
+                    checkboxElement.style = "accent-color: " + group_to_color_dict[mode] + "; width: 20px; height:20px; padding: auto; margin: auto;"
+                }
+                else {
+                    cellDiv.style = "background-color: " + "#FFFFFF" + ";"
+                    checkboxElement.checked = false
+                    checkboxElement.style = "accent-color: " + "#EEEEEE" + "; width: 20px; height:20px; padding: auto; margin: auto;"
+                }
             }
-            // console.log(innerCellDiv)
 
-            button_container = innerCellDiv.childNodes[0].childNodes[0].childNodes[0]
-            // console.log(button_container)
-
-            checkboxElement = button_container.childNodes[1]
-            // console.log(checkboxElement);
-
-            // If the cell is in the current group
-            if (current_run_list_cell_ids.includes(current_cell.cell_id)) {
-                // highlight the whole cell
-                cellDiv.style = "background-color: " + group_to_color_dict[mode] + background_opacity + ";"
-
-                // highlight the checkbox
-                checkboxElement.checked = true;
-                checkboxElement.style = "accent-color: " + group_to_color_dict[mode] + "; width: 20px; height:20px; padding: auto; margin: auto;"
-            }
-            else {
-                cellDiv.style = "background-color: " + "#FFFFFF" + ";"
-                checkboxElement.checked = false
-                checkboxElement.style = "accent-color: " + "#EEEEEE" + "; width: 20px; height:20px; padding: auto; margin: auto;"
-            }
         }
     }
 
@@ -260,22 +261,25 @@ define([
             innerCellDiv = current_cell.element[0].childNodes[0].childNodes[1]
 
             // if it is markdown cell(they have different html structure)
-            if (current_cell.cell_type != "code") {
-                innerCellDiv = current_cell.element[0].childNodes[1]
-            }
-            button_container = innerCellDiv.childNodes[0].childNodes[0].childNodes[0]
+            // if (current_cell.cell_type != "code") {
+            //     innerCellDiv = current_cell.element[0].childNodes[1]
+            // }
 
-            // console.log(button_container)
+            if (current_cell.cell_type == "code") {
+                button_container = innerCellDiv.childNodes[0].childNodes[0].childNodes[0]
 
-            spanSequence = button_container.childNodes[0]
-            // console.log(spanSequence);
-            checkboxElement = button_container.childNodes[1]
-            // console.log(checkboxElement);
-            if (current_run_list_cell_ids.includes(current_cell.cell_id)) {
-                spanSequence.textContent = current_run_list_cell_ids.indexOf(current_cell.cell_id) + 1
-            }
-            else {
-                spanSequence.textContent = ""
+                // console.log(button_container)
+
+                spanSequence = button_container.childNodes[0]
+                // console.log(spanSequence);
+                checkboxElement = button_container.childNodes[1]
+                // console.log(checkboxElement);
+                if (current_run_list_cell_ids.includes(current_cell.cell_id)) {
+                    spanSequence.textContent = current_run_list_cell_ids.indexOf(current_cell.cell_id) + 1
+                }
+                else {
+                    spanSequence.textContent = ""
+                }
             }
         }
     }
@@ -310,7 +314,7 @@ define([
             // Button for clear selections
             Jupyter.keyboard_manager.actions.register({
                 'help': 'Clear All Selections (Option + C)',
-                'icon': 'fa-ban',
+                'icon': 'fa-trash',
                 'handler': clear_all_selections_in_group
             }, 'clear-all-selections', 'Group Group Go'),
 
@@ -437,38 +441,40 @@ define([
 
             // code cell and text cell have different div structure
             cellDiv = button_container.parent().parent().parent().parent().parent();
-            if (cell.cell_type != "code") {
-                cellDiv = button_container.parent().parent().parent().parent();
+            // if (cell.cell_type != "code") {
+            //     cellDiv = button_container.parent().parent().parent().parent();
+            // }
+            if (cell.cell_type == "code") {
+
+                // If checked, add the current cell to run list under this mode
+                if (value) {
+                    // Highlight the whole cell with opacity
+                    background_color = color + background_opacity;
+                    cellDiv[0].style = "background-color: " + background_color + ";"; // .css doesn't support opacity
+
+                    // checkbox style
+                    checkbox.css('accent-color', color);
+                    checkbox.attr("style",
+                        "width: 20px; height:20px; outline:none; border:none" +
+                        "padding: auto; margin: auto; accent-color:" + color + ";"
+                    );
+
+                    // Add the cell to run list under this mode
+                    list_of_run_lists[mode_index].push(cell);
+                }
+
+                // Delete this cell from run list under this mode
+                else {
+                    // remove style
+                    cellDiv.css({ "background-color": "#FFFFFF " }); // White
+                    checkbox.css('accent-color', "#EEEEEE");
+                    delete_from_run_list(mode_index, cell);
+                }
+
+                cell.metadata.color = color;
+                update_sequence_num(mode_index);
+                console.log(cell.metadata.checked);
             }
-
-            // If checked, add the current cell to run list under this mode
-            if (value) {
-                // Highlight the whole cell with opacity
-                background_color = color + background_opacity;
-                cellDiv[0].style = "background-color: " + background_color + ";"; // .css doesn't support opacity
-
-                // checkbox style
-                checkbox.css('accent-color', color);
-                checkbox.attr("style",
-                    "width: 20px; height:20px; outline:none; border:none" +
-                    "padding: auto; margin: auto; accent-color:" + color + ";"
-                );
-
-                // Add the cell to run list under this mode
-                list_of_run_lists[mode_index].push(cell);
-            }
-
-            // Delete this cell from run list under this mode
-            else {
-                // remove style
-                cellDiv.css({ "background-color": "#FFFFFF " }); // White
-                checkbox.css('accent-color', "#EEEEEE");
-                delete_from_run_list(mode_index, cell);
-            }
-
-            cell.metadata.color = color;
-            update_sequence_num(mode_index);
-            console.log(cell.metadata.checked);
         };
     }
 
@@ -482,26 +488,29 @@ define([
     // Add HTML element to each cell
     var add_checkbox_to_cell = function () {
         return function (div, cell) {
-            var button_container = $(div);
-            button_container.attr("style",
-                "display: flex;"
-            );
 
-            var checkbox = $('<input/>').attr('type', 'checkbox');
-            // checkbox design
-            checkbox.attr("style",
-                "width: 20px; height:20px; padding: auto; margin: auto; border:none; outline:none;"
-            );
+            if (cell instanceof Jupyter.CodeCell) {
+                var button_container = $(div);
+                button_container.attr("style",
+                    "display: flex;"
+                );
 
-            var sequence_span = $('<span/>').text('');
-            // sequence design
-            sequence_span.attr("style",
-                "font-size: 16px; display: flex; justify-content: center; padding-right: 5px; padding-top: 3px"
-            );
+                var checkbox = $('<input/>').attr('type', 'checkbox');
+                // checkbox design
+                checkbox.attr("style",
+                    "width: 20px; height:20px; padding: auto; margin: auto; border:none; outline:none;"
+                );
 
-            add_checkbox_click(checkbox, cell, button_container);
-            button_container.append(sequence_span);
-            button_container.append(checkbox);
+                var sequence_span = $('<span/>').text('');
+                // sequence design
+                sequence_span.attr("style",
+                    "font-size: 16px; display: flex; justify-content: center; padding-right: 5px; padding-top: 3px"
+                );
+
+                add_checkbox_click(checkbox, cell, button_container);
+                button_container.append(sequence_span);
+                button_container.append(checkbox);
+            };
         };
     }
 
